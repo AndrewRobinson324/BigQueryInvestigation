@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+*.deb
+mysql_export.csv
+imdb_movies_with_rating.csv
+housing_1988-1999.csv
+data_files/
+.idea/
+.vscode/
