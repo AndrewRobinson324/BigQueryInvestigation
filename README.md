@@ -1,34 +1,30 @@
 # BigQuery Investigation
 
-Python utilities for a learning ETL flow: extract data from **MySQL**, transform with **pandas**, and load or query **Google BigQuery**.
+A small project I put together while learning how data moves from a traditional database into the cloud. I wanted to see the whole picture, not just write queries, but actually **pull data**, **shape it**, and **land it somewhere I could analyze it again**, which is how I ended up wiring MySQL, Python/pandas, and Google BigQuery into one flow.
 
-## Prerequisites
+## What I set out to do
 
-- Python **3.12** (`.python-version` is set for pyenv).
-- MySQL options file **`~/.my.cnf`** used by `mysql.connector.connect(read_default_file=...)`.
-- Google Cloud credentials with BigQuery access for BigQuery scripts (`gcloud auth application-default login` or a service account).
+I was curious what it feels like to build a **real-ish ETL pipeline** without a fancy orchestration tool: connect to the database I use for coursework, run transformations that mean something to me (like summarizing movies by year or tagging ratings), and finally **load the results into BigQuery** so I could query them like any other dataset.
 
-```bash
-pip install -r requirements.txt
-```
+Along the way I wanted to get comfortable with **BigQuery itself** projects, datasets, tables, load jobs, and how CSV exports behave once they hit the cloud.
 
-## Scripts
+## How the pieces fit together
 
-| Script | Purpose |
-|--------|---------|
-| `mysql-connect.py` | Test MySQL using `~/.my.cnf`. |
-| `mysql-query.py` | Sample query against `imdb_movies`. |
-| `mysql-export-imdb-csv.py` | Export `imdb_movies` with computed `movie_rating` from `avg_vote`. |
-| `pandas-dtypes.py` | Example `pandas.read_sql`. |
-| `pandas-new-col-sql.py` | CSV export with SQL-side `movie_rating`. |
-| `pandas-transform.py` | Export `city_house_prices` for **1988–1999** to `housing_1988-1999.csv`. |
-| `full-etl.py` | Aggregate movies by year, add `year_rating`, export CSV, load BigQuery `annual_movie_summary`. |
-| `bq-conn.py` | Sample query against `sample_dataset.imdb_movies_with_ratings`. |
-| `bq-load.py` | Load housing CSV into `sample_dataset.city_house_prices1988-1999`. |
+**Extract:** I used Python with `mysql.connector`, reading connection defaults from my local MySQL options file (`~/.my.cnf`), so I wasn’t hard-coding passwords into the repo.
 
-Update database names and BigQuery `project.dataset.table` ids inside each script to match your environment.
+**Transform:** I used **pandas** for some basic transformations (was not the aim of my project) for example aggregating or enriching data before export. Some transformations live in SQL (`GROUP BY`, averages), and others live in Python (bucketing years into rough “good / okay / bad” labels). Experimenting in both places helped me see where each approach feels natural.
 
-## Notes
+**Load:** I used the **Google Cloud BigQuery** Python client to load CSV files into tables under my project (for example datasets like `sample_dataset`). Figuring out **load job config**—CSV format, header rows, `autodetect`, and write disposition—was where a lot of the learning clicked.
 
-- Generated CSV outputs are gitignored; reproduce them with the scripts above.
-- Do not commit secrets (`~/.my.cnf`, service-account JSON).
+```mermaid
+flowchart LR
+  subgraph extract [Extract]
+    MySQL[(MySQL)]
+  end
+  subgraph transform [Transform]
+    Pandas[pandas_and_SQL]
+  end
+  subgraph load [Load]
+    BQ[(BigQuery)]
+  end
+  MySQL --> Pandas --> BQ
